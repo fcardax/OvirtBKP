@@ -44,25 +44,30 @@ SNAPSHOT_ID=$(cat /tmp/snapshot.out | grep "snapshot href" | sed -e 's/^.*id="\(
 # get disk id 
 curl -s -X GET -k -H "$H1" -H "$H2" -H "$H3" -i $URL/vms/$VM_ID/snapshots/$SNAPSHOT_ID/disks -o /tmp/disks.out
 
-# attach disk id to backup vm
-DISK_ID=$(cat /tmp/disks.out | grep "disk id" | sed -e 's/.*="\(.*\)">/\1/')
-DISKATTACHMENT_DATA="<disk_attachment> <active>true</active> <interface>virtio_scsi</interface> <disk id=\"$DISK_ID\" > <snapshot id=\"$SNAPSHOT_ID\" /> </disk> </disk_attachment>"
-echo -e "${GREEN}ATTACH DISK $NC"
-curl -X POST -k -H "$H1" -H "$H2" -H "$H3" -i $URL/vms/$BACKUP_VM_ID/diskattachments/ --data "$DISKATTACHMENT_DATA"
-
-DISK_NAME=$(get_disk_name_by_id "$DISK_ID")
-## backup procedure
-DEV=$(dmesg  | grep 'Attached SCSI disk'| grep -v sda | awk '{print $5}' | sed -e 's/\[//' -e 's/\]//'| sort | uniq)
-for DISK in $DEV
+# attach disks id to backup vm
+DISKS_ID=$(cat /tmp/disks.out | grep "disk id" | sed -e 's/.*="\(.*\)">/\1/')
+for DISK_ID in $DISKS_ID
 do
-	if [ -e /dev/${DISK} ]
-	then
-		dd if=/dev/${DISK} of=${BACKUP_DIR}/$DISK_NAME
-	fi
-done
+	DISKATTACHMENT_DATA="<disk_attachment> <active>true</active> <interface>virtio_scsi</interface> <disk id=\"$DISK_ID\" > <snapshot id=\"$SNAPSHOT_ID\" /> </disk> </disk_attachment>"
+	echo -e "${GREEN}ATTACH DISK $NC"
+	curl -X POST -k -H "$H1" -H "$H2" -H "$H3" -i $URL/vms/$BACKUP_VM_ID/diskattachments/ --data "$DISKATTACHMENT_DATA"
 
-echo -e "${GREEN}DETACH DISK $NC"
-curl -X DELETE -k -H "$H1" -H "$H2" -H "$H3" -i $URL/vms/$BACKUP_VM_ID/diskattachments/$DISK_ID
+	DISK_NAME=$(get_disk_name_by_id "$DISK_ID")
+
+	## backup procedure
+	DEV=$(dmesg  | grep 'Attached SCSI disk'| grep -v sda | awk '{print $5}' | grep -v Attached | sed -e 's/\[//' -e 's/\]//'| sort | uniq)
+	echo DEBUG: $DEV
+	for DISK in $DEV
+	do
+		if [ -e /dev/${DISK} ]
+		then
+			dd if=/dev/${DISK} of=${BACKUP_DIR}/$DISK_NAME status=progress
+		fi
+	done
+
+	echo -e "${GREEN}DETACH DISK $NC"
+	curl -X DELETE -k -H "$H1" -H "$H2" -H "$H3" -i $URL/vms/$BACKUP_VM_ID/diskattachments/$DISK_ID
+done
 
 echo -e "${GREEN}REMOVE SNAPSHOST $NC"
 curl -X DELETE -k -H "$H1" -H "$H2" -H "$H3" -i $URL/vms/$VM_ID/snapshots/$SNAPSHOT_ID 
