@@ -12,51 +12,12 @@ URL="https://engine.ovirt.local/ovirt-engine/api/"
 
 ## vm id backup 
 BACKUP_VM_ID="806823fa-afee-4a75-bda8-c3e1c5923762"
+BACKUP_DIR=/mnt/backup
 
 ## arg 1 vm name
 VM=$1
 
-## return vm id 
-get_vm_id () {
-
-	VM_NAME=$1
-	[ -f /tmp/vms.out ] && rm -f /tmp/vms.out
-	curl -s -X GET -k -H "$H1" -H "$H2" -H "$H3" -i $URL/vms/ -o /tmp/vms.out
-
-	for LINE in "$(cat /tmp/vms.out | egrep -e '<name>' -e 'vm href' | egrep -v 'CEST|GMT|Europe|UTC|EDT|internal-authz|ens3' | paste -d " "  - - |sed -e 's/.*id="\(.*\)"> /\1/' -e 's/<name>//' -e 's/<\/name>//')"
-	do
-		read -ra VM_ATTR <<<"$LINE"
-		if [[ ${VM_ATTR[1]} == $VM_NAME ]]
-		then
-			echo "${VM_ATTR[0]}"
-		fi
-	done
-}
-
-
-## funzione controllo status snapshot 
-snapshot_status() {
-	ITER=0
-	FILE=( $( cat /tmp/snapshot_status.out ) )
-	for LINE in ${FILE[@]}
-	do
-		ITER=$((ITER+1))
-		if [[ $LINE =~ $1 ]]
-		then
-			for LINE2 in ${FILE[@]:$ITER}
-			do
-				if [ $LINE2 == '<snapshot_status>ok</snapshot_status>' ]
-				then
-					break 3
-				fi
-			done
-		fi
-	done
-}
-
-
-
-
+source functions.sh
 VM_ID=$(get_vm_id $VM)
 
 #eseguo snapshot VM
@@ -89,13 +50,14 @@ DISKATTACHMENT_DATA="<disk_attachment> <active>true</active> <interface>virtio_s
 echo -e "${GREEN}ATTACH DISK $NC"
 curl -X POST -k -H "$H1" -H "$H2" -H "$H3" -i $URL/vms/$BACKUP_VM_ID/diskattachments/ --data "$DISKATTACHMENT_DATA"
 
+DISK_NAME=$(get_disk_name_by_id "$DISK_ID")
 ## backup procedure
-DEV=$(dmesg  | grep 'Attached SCSI disk'| grep -v sda | awk '{print $5}' | sed -e 's/\[//' -e 's/\]/')
+DEV=$(dmesg  | grep 'Attached SCSI disk'| grep -v sda | awk '{print $5}' | sed -e 's/\[//' -e 's/\]//'| sort | uniq)
 for DISK in $DEV
 do
 	if [ -e /dev/${DISK} ]
 	then
-		echo dd if=/dev/${DISK} of=${BACKUP_DIR}
+		dd if=/dev/${DISK} of=${BACKUP_DIR}/$DISK_NAME
 	fi
 done
 
@@ -103,5 +65,4 @@ echo -e "${GREEN}DETACH DISK $NC"
 curl -X DELETE -k -H "$H1" -H "$H2" -H "$H3" -i $URL/vms/$BACKUP_VM_ID/diskattachments/$DISK_ID
 
 echo -e "${GREEN}REMOVE SNAPSHOST $NC"
-echo curl -X DELETE -k -H "$H1" -H "$H2" -H "$H3" -i $URL/vms/$VM_ID/snapshots/$SNAPSHOT_ID 
-		
+curl -X DELETE -k -H "$H1" -H "$H2" -H "$H3" -i $URL/vms/$VM_ID/snapshots/$SNAPSHOT_ID 
