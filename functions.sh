@@ -1,16 +1,16 @@
 ## return vm id 
 get_vm_id () {
-
 	VM_NAME=$1
-	[ -f /tmp/vms.out ] && rm -f /tmp/vms.out
-	curl -s -X GET -k -H "$H1" -H "$H2" -H "$H3" -i $URL/vms/ -o /tmp/vms.out
-
-	for LINE in "$(cat /tmp/vms.out | egrep -e '<name>' -e 'vm href' | egrep -v 'CEST|GMT|Europe|UTC|EDT|internal-authz|ens3' | paste -d " "  - - |sed -e 's/.*id="\(.*\)"> /\1/' -e 's/<name>//' -e 's/<\/name>//')"
+	[ -f /tmp/vms.xml ] && rm -f /tmp/vms.xml
+	curl -s -X GET -k -H "$H1" -H "$H2" -H "$H3" $URL/vms/ -o /tmp/vms.xml
+	A=0
+	for LINE in $(xml2 < /tmp/vms.xml | egrep -e '/vms/vm/@id=' -e '/vms/vm/name=' | sed -e 's/^.*=\(.*\)/\1/' | paste -sd";\n" | grep -v HostedEngine)
 	do
-		read -ra VM_ATTR <<<"$LINE"
-		if [[ ${VM_ATTR[1]} == $VM_NAME ]]
+		IFS=';'
+		read -ra ATTR <<< "$LINE"
+		if [[ $VM_NAME == ${ATTR[1]} ]]
 		then
-			echo "${VM_ATTR[0]}"
+			echo ${ATTR[0]}
 		fi
 	done
 }
@@ -31,7 +31,7 @@ get_disk_name_by_id() {
                                 if [[ $LINE2 =~ "<name>" ]]
                                 then
                                         DISK_NAME=$LINE2
-                                        break 3
+                                        break 2
                                 fi
                         done
                 fi
@@ -41,10 +41,22 @@ get_disk_name_by_id() {
         echo $DISK_NAME
 }
 
+get_snapshot_id() {
+	for LINE in $(cat /tmp/snapshot_status.xml | xml2  | egrep -e '/snapshots/snapshot/@id=' -e '/snapshots/snapshot/description=' | sed -e 's/^.*=\(.*\)/\1/' | paste -sd";\n" | grep -v 'Active VM')
+	do
+		IFS=';'
+		read -ra SNAP_ATTR <<< "$LINE"
+		if [[ ${SNAP_ATTR[1]} == $1 ]]
+		then
+			echo ${SNAP_ATTR[0]}
+		fi
+	done
+}
+
 ## check status of snapshot
 snapshot_status() {
 	ITER=0
-	FILE=( $( cat /tmp/snapshot_status.out ) )
+	FILE=( $( cat /tmp/snapshot_status.xml ) )
 	for LINE in ${FILE[@]}
 	do
 		ITER=$((ITER+1))
@@ -58,5 +70,13 @@ snapshot_status() {
 				fi
 			done
 		fi
+	done
+}
+get_all_vms(){
+	[ -f /tmp/vms.out ] && rm -f /tmp/vms.out
+	curl -sk -X GET -H "$H1" -H "$H2" -H "$H3" $URL/vms/ -o /tmp/vms.out
+	for VM in $(cat /tmp/vms.out | xml2 | grep '/vms/vm/name=')
+	do
+		echo ${VM/\/vms\/vm\/name\=/}
 	done
 }
