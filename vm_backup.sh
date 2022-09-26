@@ -41,10 +41,10 @@ DISKS_ID=$(xml2 </tmp/disks.xml | egrep -e '/disks/disk/@id=' | sed -e 's/^.*=\(
 for DISK_ID in $DISKS_ID
 do
 	DISKATTACHMENT_DATA="<disk_attachment> <active>true</active> <interface>virtio_scsi</interface> <disk id=\"$DISK_ID\" > <snapshot id=\"$SNAPSHOT_ID\" /> </disk> </disk_attachment>"
-	echo -e "${GREEN}ATTACH DISK $NC $DISK_ID"
+	DISK_NAME=$(get_disk_name_by_id "$DISK_ID")
+	echo -e "${GREEN}ATTACH DISK $NC $DISK_NAME"
 	curl -X POST -k -H "$H1" -H "$H2" -H "$H3" $URL/vms/$BACKUP_VM_ID/diskattachments/ --data "$DISKATTACHMENT_DATA" -o /dev/null
 
-	DISK_NAME=$(get_disk_name_by_id "$DISK_ID")
 
 	## backup procedure
 	DEV=$(dmesg  | grep 'Attached SCSI disk'| grep -v sda | awk '{print $5}' | grep -v Attached | sed -e 's/\[//' -e 's/\]//'| sort | uniq)
@@ -63,4 +63,4 @@ do
 done
 
 echo -e "${GREEN}REMOVE SNAPSHOST $NC"
-curl -X DELETE -k -H "$H1" -H "$H2" -H "$H3" -i $URL/vms/$VM_ID/snapshots/$SNAPSHOT_ID -o /dev/null
+curl -X DELETE -k -H "$H1" -H "$H2" -H "$H3"  $URL/vms/$VM_ID/snapshots/$SNAPSHOT_ID -o /dev/null
