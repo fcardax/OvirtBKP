@@ -1,6 +1,6 @@
 #!/bin/bash
 ##
-source vm_snapshot.conf
+source vm_backup.conf
 source functions.sh
 GREEN='\033[0;32m'
 NC='\033[0m'
@@ -43,24 +43,27 @@ do
 	DISKATTACHMENT_DATA="<disk_attachment> <active>true</active> <interface>virtio_scsi</interface> <disk id=\"$DISK_ID\" > <snapshot id=\"$SNAPSHOT_ID\" /> </disk> </disk_attachment>"
 	DISK_NAME=$(get_disk_name_by_id "$DISK_ID")
 	echo -e "${GREEN}ATTACH DISK $NC $DISK_NAME"
-	curl -X POST -k -H "$H1" -H "$H2" -H "$H3" $URL/vms/$BACKUP_VM_ID/diskattachments/ --data "$DISKATTACHMENT_DATA" -o /dev/null
+	curl -s -X POST -k -H "$H1" -H "$H2" -H "$H3" $URL/vms/$BACKUP_VM_ID/diskattachments/ --data "$DISKATTACHMENT_DATA" -o /dev/null
 
 
 	## backup procedure
-	DEV=$(dmesg  | grep 'Attached SCSI disk'| grep -v sda | awk '{print $5}' | grep -v Attached | sed -e 's/\[//' -e 's/\]//'| sort | uniq)
+	#DEV=$(dmesg  | grep 'Attached SCSI disk'| grep -v sda | awk '{print $5}' | grep -v Attached | sed -e 's/\[//' -e 's/\]//'| sort | uniq)
 
+	sleep 5
+	DEV=$(ls -1 /dev/sd? | grep -v sda)
 	for DISK in $DEV
 	do
-		if [ -e /dev/${DISK} ]
+		if [ -e ${DISK} ]
 		then
 			[ ! -d $BACKUP_DIR ] && mkdir -p $BACKUP_DIR
-			dd if=/dev/${DISK} of=${BACKUP_DIR}/${DISK_NAME} status=progress
+			dd if=${DISK} of=${BACKUP_DIR}/${DISK_NAME} status=progress
+			sleep 3
 		fi
 	done
 
 	echo -e "${GREEN}DETACH DISK $NC"
-	curl -X DELETE -k -H "$H1" -H "$H2" -H "$H3" -i $URL/vms/$BACKUP_VM_ID/diskattachments/$DISK_ID -o /dev/null
+	curl -s -X DELETE -k -H "$H1" -H "$H2" -H "$H3" $URL/vms/$BACKUP_VM_ID/diskattachments/$DISK_ID -o /dev/null
 done
 
 echo -e "${GREEN}REMOVE SNAPSHOST $NC"
-curl -X DELETE -k -H "$H1" -H "$H2" -H "$H3"  $URL/vms/$VM_ID/snapshots/$SNAPSHOT_ID -o /dev/null
+curl -s -X DELETE -k -H "$H1" -H "$H2" -H "$H3"  $URL/vms/$VM_ID/snapshots/$SNAPSHOT_ID -o /dev/null
