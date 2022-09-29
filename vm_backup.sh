@@ -3,6 +3,7 @@
 source vm_backup.conf
 source functions.sh
 GREEN='\033[0;32m'
+RED='\033[0;31m'
 NC='\033[0m'
 
 ## arg 1 vm name
@@ -24,7 +25,14 @@ while true
 do
 	curl -s -X GET -k -H "$H1" -H "$H2" -H "$H3" $URL/vms/$VM_ID/snapshots --data "$SNAPSHOT_DATA" -o /tmp/snapshot_status.xml
 	echo -n .
-	snapshot_status $SNAPSHOT_NAME
+	snapshot_status2 $SNAPSHOT_NAME
+	if [[ $? == 1 ]] 
+	then 
+		echo
+		echo -e "${RED}ERRORE ${NC}$VM"
+		exit 1
+	fi
+
 	sleep 1
 done
 echo
@@ -56,7 +64,7 @@ do
 		if [ -e ${DISK} ]
 		then
 			[ ! -d $BACKUP_DIR ] && mkdir -p $BACKUP_DIR
-			dd if=${DISK} of=${BACKUP_DIR}/${DISK_NAME} status=progress
+			dd if=${DISK} of=${BACKUP_DIR}/${DISK_NAME} bs=32k status=progress
 			sleep 3
 		fi
 	done

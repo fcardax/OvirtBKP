@@ -53,6 +53,22 @@ get_snapshot_id() {
 	done
 }
 
+snapshot_status2() {
+	LINES=$(cat /tmp/snapshot_status.xml | xml2 | egrep -e '/snapshots/snapshot/description=' -e '/snapshots/snapshot/snapshot_status' | egrep -A1 "$1$")
+		if [[ -z $LINES ]]
+		then
+			return 1
+		fi
+	for LINE in $LINES
+	do
+
+		if [[ $LINE =~ 'snapshot_status=ok' ]]
+		then
+			break 2
+		fi
+	done
+}
+
 ## check status of snapshot
 snapshot_status() {
 	ITER=0
@@ -73,10 +89,20 @@ snapshot_status() {
 	done
 }
 get_all_vms(){
-	[ -f /tmp/vms.out ] && rm -f /tmp/vms.out
-	curl -sk -X GET -H "$H1" -H "$H2" -H "$H3" $URL/vms/ -o /tmp/vms.out
-	for VM in $(cat /tmp/vms.out | xml2 | grep '/vms/vm/name=')
+	[ -f /tmp/vms.xml ] && rm -f /tmp/vms.xml
+	curl -sk -X GET -H "$H1" -H "$H2" -H "$H3" $URL/vms/ -o /tmp/vms.xml
+	for VM in $(xml2 </tmp/vms.xml | egrep '/vms/vm/name=' | egrep -v -e 'HostedEngine' -e "$BACKUP_VM_NAME" | sed -e 's/^.*=\(.*\)/\1/')
 	do
 		echo ${VM/\/vms\/vm\/name\=/}
+	done
+}
+
+get_all_vms_cluster(){
+
+	[ -f /tmp/vms.xml ] && rm -f /tmp/vms.xml
+	curl -sk -X GET -H "$H1" -H "$H2" -H "$H3" $URL/vms/ -o /tmp/vms.xml
+	for VM in $(xml2 </tmp/vms.xml | egrep -e '/vms/vm/cluster/@id=' -e '/vms/vm/name='  | sed -e 's/^.*=\(.*\)/\1/' | paste -sd ';\n' | egrep "$1" | cut -d';' -f1 | egrep -v -e 'HostedEngine' -e $BACKUP_VM_NAME )
+	do
+		echo $VM
 	done
 }
