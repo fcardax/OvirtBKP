@@ -36,7 +36,6 @@ cat > /tmp/post_snapshot.xml << EOF
 EOF
 
 curl -s -X POST -k -H "$H1" -H "$H2" -H "$H3" $URL/vms/$VM_ID/snapshots --data @/tmp/post_snapshot.xml -o /tmp/snapshot.xml
-echo "curl -s -X POST -k -H "$H1" -H "$H2" -H "$H3" $URL/vms/$VM_ID/snapshots --data @/tmp/post_snapshot.xml -o /tmp/snapshot.xml"
 sleep 1
 
 ## loop check status of snapshot
