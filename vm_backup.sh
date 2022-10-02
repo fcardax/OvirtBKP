@@ -16,8 +16,18 @@ VM_ID=$(get_vm_id $VM)
 echo -e "${GREEN}SNAPSHOST ${NC}$VM"
 SNAPSHOT_NAME="BACKUP_$(date "+%d%m%y%H%M%S")"
 BACKUP_DIR=${BACKUP_DIR}/${VM}/${SNAPSHOT_NAME}
-SNAPSHOT_DATA="<snapshot> <description>$SNAPSHOT_NAME</description> </snapshot>"
-curl -s -X POST -k -H "$H1" -H "$H2" -H "$H3" -i $URL/vms/$VM_ID/snapshots --data "$SNAPSHOT_DATA" -o /tmp/snapshot.xml
+#SNAPSHOT_DATA="<snapshot> <description>$SNAPSHOT_NAME</description> </snapshot>"
+
+[ -e /tmp/post_snapshot.xml ] && rm -f /tmp/post_snapshot.xml
+
+cat > /tmp/post_snapshot.xml << EOF
+<snapshot>
+  <description>$SNAPSHOT_NAME</description>
+  <persist_memorystate>false</persist_memorystate>
+</snapshot>
+EOF
+
+curl -s -X POST -k -H "$H1" -H "$H2" -H "$H3" $URL/vms/$VM_ID/snapshots --data @/tmp/post_snapshot.xml -o /tmp/snapshot.xml
 sleep 1
 
 ## loop check status of snapshot
