@@ -15,6 +15,12 @@ get_vm_id () {
 	done
 }
 
+get_boot_disk_id(){
+	[ -f /tmp/boot_disk.xml ] && rm -f /tmp/boot_disk.xml
+	curl -sk -X GET -H "$H1" -H "$H2" -H "$H3" $URL/vms/$1/diskattachments -o /tmp/boot_disk.xml
+	echo $(xml2 </tmp/boot_disk.xml | egrep -e '/disk_attachments/disk_attachment/@id=' -e '/disk_attachments/disk_attachment/bootable=' |  sed -e 's/^.*=\(.*\)/\1/' | paste -sd ';\n' | egrep 'true' | cut -d';' -f1)
+}
+
 ## get disk name using the id
 get_disk_name_by_id() {
         [ -f /tmp/disks.out ] && rm -f /tmp/disks.out
@@ -105,4 +111,9 @@ get_all_vms_cluster(){
 	do
 		echo $VM
 	done
+}
+get_cluster_id(){
+	[ -f /tmp/clusters.xml ] && rm -f /tmp/clusters.xml
+	curl -sk -X GET -H "$H1" -H "$H2" -H "$H3" $URL/clusters/ -o /tmp/clusters.xml
+	xml2 </tmp/clusters.xm | egrep -e '/clusters/cluster/name=' -e '/clusters/cluster/@id=' | sed -e 's/^.*=\(.*\)/\1/' | paste -sd ';\n' | grep "$1$"  | cut -d';' -f1 
 }
