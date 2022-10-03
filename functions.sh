@@ -21,6 +21,12 @@ get_boot_disk_id(){
 	echo $(xml2 </tmp/boot_disk.xml | egrep -e '/disk_attachments/disk_attachment/@id=' -e '/disk_attachments/disk_attachment/bootable=' |  sed -e 's/^.*=\(.*\)/\1/' | paste -sd ';\n' | egrep 'true' | cut -d';' -f1)
 }
 
+get_disk_id(){
+        [ -f /tmp/disks.xml ] && rm -f /tmp/disks.xml
+        curl -s -X GET -k -H "$H1" -H "$H2" -H "$H3" $URL/disks -o /tmp/disks.xml
+	echo $(xml2 </tmp/disks.xml | egrep -e '/disks/disk/name=' -e '/disks/disk/image_id=' | sed -e 's/^.*=\(.*\)/\1/' | paste -sd ';\n' | egrep "$1;" | cut -d';' -f2 )
+}
+
 ## get disk name using the id
 get_disk_name_by_id() {
         [ -f /tmp/disks.out ] && rm -f /tmp/disks.out
@@ -115,5 +121,5 @@ get_all_vms_cluster(){
 get_cluster_id(){
 	[ -f /tmp/clusters.xml ] && rm -f /tmp/clusters.xml
 	curl -sk -X GET -H "$H1" -H "$H2" -H "$H3" $URL/clusters/ -o /tmp/clusters.xml
-	xml2 </tmp/clusters.xm | egrep -e '/clusters/cluster/name=' -e '/clusters/cluster/@id=' | sed -e 's/^.*=\(.*\)/\1/' | paste -sd ';\n' | grep "$1$"  | cut -d';' -f1 
+	xml2 </tmp/clusters.xml | egrep -e '/clusters/cluster/name=' -e '/clusters/cluster/@id=' | sed -e 's/^.*=\(.*\)/\1/' | paste -sd ';\n' | grep "$1$"  | cut -d';' -f1 
 }
