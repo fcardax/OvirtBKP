@@ -13,9 +13,11 @@ while getopts "nbc:" flag
 do
     case "${flag}" in
         c)
+                echo C
 		CLUSTER_NAME=$OPTARG
 		;;
         n)
+                echo N
                 CMD="echo $INSTALL_DIR/$CMD"
 		;;
 

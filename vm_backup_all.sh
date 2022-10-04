@@ -1,10 +1,11 @@
 #!/bin/bash
-source vm_snapshot.conf
+source vm_backup.conf
 source functions.sh
 
-WDIR=/root/bash_ovirt
-
-for I in $(get_all_vms)
+WDIR=/root/bash_snapshots
+[ ! -z $1 ] && LIST=$(get_all_vms | egrep -e $1)
+[ -z $1 ] && LIST=$(get_all_vms)
+for I in $LIST
 do
-	echo ./vm_backup.sh $I
+	$WDIR/vm_backup.sh $I 
 done

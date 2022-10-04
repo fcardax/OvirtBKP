@@ -1,8 +1,7 @@
 #!/bin/bash
 ##
-INSTALL_DIR="/root/OvirtBKP"
-source $INSTALL_DIR/vm_backup.conf
-source $INSTALL_DIR/functions.sh
+source vm_backup.conf
+source functions.sh
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m'
@@ -11,8 +10,7 @@ NC='\033[0m'
 VM=$1
 
 VM_ID=$(get_vm_id $VM)
-BOOT_DISK_ID=$(get_boot_disk_id $VM_ID)
-IMAGE_ID=$(uuidgen)
+DISK_ID=$(get_disk_id $2)
 
 #eseguo snapshot VM
 [ -f /tmp/snapshot.xml ] && rm -f /tmp/snapshot.out
