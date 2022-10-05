@@ -1,7 +1,8 @@
 #!/bin/bash
 ##
-source vm_backup.conf
-source functions.sh
+INSTALL_DIR=/opt/OvirtBKP
+source $INSTALL_DIR/vm_backup.conf
+source $INSTALL_DIR/functions.sh
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m'
@@ -39,7 +40,7 @@ do
 	if [[ $? == 1 ]] 
 	then 
 		echo
-		echo -e "${RED}ERRORE ${NC}$VM"
+		echo -e "$SNAPSHOT_NAME $VM ${RED}ERROR ${NC}"
 		exit 1
 	fi
 
@@ -85,3 +86,4 @@ done
 
 echo -e "${GREEN}REMOVE SNAPSHOST $NC"
 curl -s -X DELETE -k -H "$H1" -H "$H2" -H "$H3"  $URL/vms/$VM_ID/snapshots/$SNAPSHOT_ID -o /dev/null
+echo -e "$VM ${SNAPSHOT_NAME} ${GREEN}OK $NC"
