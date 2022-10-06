@@ -3,6 +3,10 @@
 # 
 bash script to use rest api ovirt to make backup VM
 
+INSTALL
+yum install xml2
+git clone https://github.com/fcardax/OvirtBKP
+
 USAGE
 vm_backup.sh vm-name
 
@@ -21,3 +25,10 @@ BACKUP_VM_NAME="vm_name"
 the directory where the backup are stored
 BACKUP_DIR=/mnt/backup
 
+
+## Backup all cluster's vms
+vm_backup_cluster.sh -d -n -c GECT-P
+
+-d run-dry
+-n all disks
+-b only boot disk
