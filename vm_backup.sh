@@ -14,7 +14,7 @@ VM_ID=$(get_vm_id $VM)
 
 #eseguo snapshot VM
 [ -f /tmp/snapshot.xml ] && rm -f /tmp/snapshot.out
-echo -e "${GREEN}SNAPSHOST ${NC}$VM"
+echo -e "${GREEN}SNAPSHOT ${NC}$VM"
 SNAPSHOT_NAME="BACKUP_$(date "+%d%m%y%H%M%S")"
 BACKUP_DIR=${BACKUP_DIR}/${VM}/${SNAPSHOT_NAME}
 #SNAPSHOT_DATA="<snapshot> <description>$SNAPSHOT_NAME</description> </snapshot>"
@@ -84,6 +84,6 @@ do
 	curl -s -X DELETE -k -H "$H1" -H "$H2" -H "$H3" $URL/vms/$BACKUP_VM_ID/diskattachments/$DISK_ID -o /dev/null
 done
 
-echo -e "${GREEN}REMOVE SNAPSHOST $NC"
+echo -e "${GREEN}REMOVE SNAPSHOT $NC"
 curl -s -X DELETE -k -H "$H1" -H "$H2" -H "$H3"  $URL/vms/$VM_ID/snapshots/$SNAPSHOT_ID -o /dev/null
 echo -e "$VM ${SNAPSHOT_NAME} ${GREEN}OK $NC"
