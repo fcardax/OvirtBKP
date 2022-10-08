@@ -1,7 +1,8 @@
 # OvirtBCK
 # backup script ovirt platform in bash
 # 
-bash script to use rest api ovirt to make backup VM
+Using rest api ovirt to make backup VM in bash language
+With curl and xml2 tools
 
 INSTALL
 yum install xml2
