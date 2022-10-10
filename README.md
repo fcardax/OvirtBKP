@@ -10,10 +10,10 @@ yum install xml2
 cd /opt/
 git clone https://github.com/fcardax/OvirtBKP
 
-#USAGE
+USAGE
 vm_backup.sh vm-name
 
-#EDIT
+EDIT
 vm_backup.conf 
 
 Replace URL with you engine
