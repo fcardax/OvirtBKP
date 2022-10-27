@@ -1,0 +1,29 @@
+---
+- hosts: localhost
+  gather_facts: false
+  connection: local
+  tasks:
+    - block:
+        - name: auth manager
+          ovirt_auth:
+            url: https://manager.ovirt.local/ovirt-engine/api
+            username: admin@internal
+            ca_file: ca.crt
+            password: "daitarn3$"
+        - name: ovirt disk
+          ovirt_disk:
+            auth: "{{ ovirt_auth }}"
+            name: ged-p-as-xcp-k01_Disk1
+            interface: virtio
+            format: raw
+            sparse: no
+            upload_image_path: /mnt/bfs_backup/manager/Produzione/ged-p-as-xcp-k07/BACKUP_221022011248/template-oel8_Disk1
+            size: 50GiB
+            storage_domain: fc_oraas01
+            wait: True
+
+      always:
+        - name: Always revoke the SSO token
+          ovirt_auth:
+            state: absent
+            ovirt_auth: "{{ ovirt_auth }}"
